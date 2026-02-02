@@ -22,7 +22,7 @@ const Navbar = () => {
 
     const isAdmin = (session?.user as any)?.role === "administrator";
 
-    
+
     if (isAdmin) {
         return (
             <header className="sticky top-0 w-full z-[2000] bg-white border-b border-black/10 h-[55px]">
@@ -56,7 +56,7 @@ const Navbar = () => {
                                 </Link>
                             </li>
 
-                            {}
+                            { }
                             <li className="flex h-full items-center relative group">
                                 <div
                                     className={`flex flex-col items-center justify-center min-w-[84px] h-full text-[13px] transition-all duration-200 border-b-2 pt-[4px] cursor-pointer ${pathname.startsWith("/admin/alumni") || pathname.startsWith("/admin/jobs") || pathname.startsWith("/admin/events") || pathname.startsWith("/admin/posting") || pathname.startsWith("/admin/analytics")
@@ -86,7 +86,7 @@ const Navbar = () => {
                                 </div>
                             </li>
 
-                            {}
+                            { }
                             <li className="flex h-full items-center relative group">
                                 <div
                                     className={`flex flex-col items-center justify-center min-w-[84px] h-full text-[13px] transition-all duration-200 border-b-2 pt-[4px] cursor-pointer ${pathname.startsWith("/admin/users") || pathname.startsWith("/admin/logs")
@@ -141,14 +141,26 @@ const Navbar = () => {
                                 <li className="flex h-full items-center">
                                     <Link
                                         href="/profile"
-                                        className="flex flex-col items-start justify-center px-[11px] h-full text-[#666] hover:text-primary transition-all duration-200"
+                                        className="flex items-center gap-[12px] px-[11px] h-full text-[#666] hover:text-primary transition-all duration-200"
                                     >
-                                        <span className="text-[11px] font-bold text-[#8B1538] leading-none mb-[3px] uppercase tracking-[0.5px]">
-                                            ADMIN
-                                        </span>
-                                        <span className="text-[15px] font-semibold text-[#333] leading-none flex items-center gap-[6px]">
-                                            {session?.user?.name || "Admin"} <i className="fas fa-caret-down text-[11px]"></i>
-                                        </span>
+                                        <div className="w-[32px] h-[32px] rounded-full overflow-hidden border border-black/10 flex-shrink-0">
+                                            <img
+                                                src={(session?.user as any)?.profile_image ? `/assets/uploads/alumni/${(session?.user as any).profile_image}` : "/assets/images/person-male.png"}
+                                                alt="Profile"
+                                                className="w-full h-full object-cover"
+                                                onError={(e) => {
+                                                    (e.target as HTMLImageElement).src = "https://ui-avatars.com/api/?name=" + (session?.user?.name || "Admin") + "&background=8B1538&color=fff";
+                                                }}
+                                            />
+                                        </div>
+                                        <div className="flex flex-col items-start justify-center">
+                                            <span className="text-[11px] font-bold text-[#8B1538] leading-none mb-[3px] uppercase tracking-[0.5px]">
+                                                ADMIN
+                                            </span>
+                                            <span className="text-[14px] font-semibold text-[#333] leading-none flex items-center gap-[4px]">
+                                                {session?.user?.name?.split(' ')[0] || "Admin"} <i className="fas fa-caret-down text-[10px]"></i>
+                                            </span>
+                                        </div>
                                     </Link>
                                 </li>
                                 <button
@@ -165,7 +177,7 @@ const Navbar = () => {
         );
     }
 
-    
+
     return (
         <header className="sticky top-0 w-full z-[2000] bg-white border-b border-black/10 h-[55px]">
             <div className="max-w-[1185px] mx-auto w-full flex items-center px-[25px] h-full">
@@ -203,7 +215,7 @@ const Navbar = () => {
                             );
                         })}
 
-                        {}
+                        { }
                         <li
                             className="flex h-full items-center relative"
                             onMouseEnter={() => setEventsDropdownOpen(true)}
@@ -222,7 +234,7 @@ const Navbar = () => {
                                 </span>
                             </div>
 
-                            {}
+                            { }
                             {eventsDropdownOpen && (
                                 <div className="absolute top-full left-0 mt-0 bg-white border border-black/10 rounded-b-lg shadow-lg min-w-[180px] py-2">
                                     <Link
@@ -249,14 +261,26 @@ const Navbar = () => {
                                     <li className="flex h-full items-center">
                                         <Link
                                             href="/profile"
-                                            className="flex flex-col items-start justify-center px-[11px] h-full text-[#666] hover:text-primary transition-all duration-200"
+                                            className="flex items-center gap-[12px] px-[11px] h-full text-[#666] hover:text-primary transition-all duration-200"
                                         >
-                                            <span className="text-[11px] font-bold text-primary leading-none mb-[3px] uppercase tracking-[0.5px]">
-                                                {(session.user as any).student_number || "ALUMNI"}
-                                            </span>
-                                            <span className="text-[15px] font-semibold text-[#333] leading-none flex items-center gap-[6px]">
-                                                {session.user.name} <i className="fas fa-caret-down text-[11px]"></i>
-                                            </span>
+                                            <div className="w-[32px] h-[32px] rounded-full overflow-hidden border border-black/10 flex-shrink-0">
+                                                <img
+                                                    src={(session?.user as any)?.profile_image ? `/assets/uploads/alumni/${(session.user as any).profile_image}` : "/assets/images/person-male.png"}
+                                                    alt="Profile"
+                                                    className="w-full h-full object-cover"
+                                                    onError={(e) => {
+                                                        (e.target as HTMLImageElement).src = "https://ui-avatars.com/api/?name=" + (session?.user?.name || "User") + "&background=8B1538&color=fff";
+                                                    }}
+                                                />
+                                            </div>
+                                            <div className="flex flex-col items-start justify-center">
+                                                <span className="text-[11px] font-bold text-primary leading-none mb-[3px] uppercase tracking-[0.5px]">
+                                                    {(session?.user as any)?.student_number || "ALUMNI"}
+                                                </span>
+                                                <span className="text-[14px] font-semibold text-[#333] leading-none flex items-center gap-[4px]">
+                                                    {session?.user?.name?.split(' ')[0]} <i className="fas fa-caret-down text-[10px]"></i>
+                                                </span>
+                                            </div>
                                         </Link>
                                     </li>
                                     <button

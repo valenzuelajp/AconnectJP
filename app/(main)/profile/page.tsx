@@ -24,7 +24,7 @@ export default function ProfilePage() {
             if (!data.error) {
                 setAlumni(data);
                 setCertifications(data.certifications || []);
-                
+
                 setFormData({
                     ...data,
                     alternative_phone: data.alternative_phone || "",
@@ -90,7 +90,7 @@ export default function ProfilePage() {
                 fetchProfile();
                 setActiveModal(null);
                 setShowSuccessNotification(true);
-                
+
                 setTimeout(() => {
                     setShowSuccessNotification(false);
                 }, 3000);
@@ -103,6 +103,35 @@ export default function ProfilePage() {
     const getImagePath = () => {
         if (alumni?.profile_image) return `/assets/uploads/alumni/${alumni.profile_image}`;
         return `/assets/images/person-${alumni?.gender?.toLowerCase() === "female" ? "female" : "male"}.png`;
+    };
+
+    const isCredly = (url: string) => {
+        return url && url.includes("credly.com");
+    };
+
+    const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        const uploadFormData = new FormData();
+        uploadFormData.append("file", file);
+
+        try {
+            setLoading(true);
+            const res = await fetch("/api/profile/upload-image", {
+                method: "POST",
+                body: uploadFormData,
+            });
+            const data = await res.json();
+            if (data.success) {
+                // Update session if needed (though next-auth handles it with JWT update)
+                fetchProfile();
+            }
+        } catch (error) {
+            console.error("Image upload failed:", error);
+        } finally {
+            setLoading(false);
+        }
     };
 
     if (loading || !alumni) {
@@ -118,12 +147,12 @@ export default function ProfilePage() {
     return (
         <div className="bg-[#FAFAF8] min-h-screen font-sans pb-20 pt-10 px-4">
             <div className="max-w-[900px] mx-auto">
-                {}
+                { }
                 <div className="bg-gradient-to-br from-[#8B1538] to-[#6B0F2A] h-[180px] rounded-t-2xl relative shadow-md overflow-hidden">
                     <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#fff_1px,transparent_1px)] bg-[size:20px_20px]"></div>
                 </div>
 
-                {}
+                { }
                 <div className="bg-white p-6 md:p-10 rounded-b-2xl shadow-md relative mb-6">
                     <div className="absolute -top-[70px] left-6 md:left-10 w-[140px] h-[140px] rounded-full border-[6px] border-white shadow-xl overflow-hidden bg-white">
                         <img
@@ -178,9 +207,9 @@ export default function ProfilePage() {
                     </div>
                 </div>
 
-                {}
+                { }
                 <div className="grid grid-cols-1 gap-6">
-                    {}
+                    { }
                     <section className="bg-white p-8 rounded-2xl shadow-sm border border-[#E5E7EB] hover:shadow-md transition-all group">
                         <div className="flex justify-between items-center mb-6 pb-4 border-b-2 border-[#D4A574]">
                             <h3 className="text-xl font-bold text-[#1F2937] flex items-center gap-3">
@@ -234,7 +263,7 @@ export default function ProfilePage() {
                         )}
                     </section>
 
-                    {}
+                    { }
                     <section className="bg-white p-8 rounded-2xl shadow-sm border border-[#E5E7EB] hover:shadow-md transition-all">
                         <div className="flex justify-between items-center mb-6 pb-4 border-b-2 border-[#D4A574]">
                             <h3 className="text-xl font-bold text-[#1F2937] flex items-center gap-3">
@@ -297,7 +326,7 @@ export default function ProfilePage() {
                         </div>
                     </section>
 
-                    {}
+                    { }
                     <section className="bg-white p-8 rounded-2xl shadow-sm border border-[#E5E7EB] hover:shadow-md transition-all">
                         <div className="flex justify-between items-center mb-6 pb-4 border-b-2 border-[#D4A574]">
                             <h3 className="text-xl font-bold text-[#1F2937] flex items-center gap-3">
@@ -339,14 +368,27 @@ export default function ProfilePage() {
                                                     )}
                                                 </div>
                                                 {cert.credential_url && (
-                                                    <a
-                                                        href={cert.credential_url}
-                                                        target="_blank"
-                                                        rel="noopener noreferrer"
-                                                        className="inline-flex items-center gap-2 mt-3 text-[#8B1538] text-xs font-bold bg-[#8B1538]/5 px-3 py-1.5 rounded-lg hover:bg-[#8B1538] hover:text-white transition-all shadow-sm"
-                                                    >
-                                                        <i className="fas fa-external-link-alt"></i> View Credential
-                                                    </a>
+                                                    <div className="flex flex-col gap-2 mt-3">
+                                                        <a
+                                                            href={cert.credential_url}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className="inline-flex items-center gap-2 text-[#8B1538] text-xs font-bold bg-[#8B1538]/5 px-3 py-1.5 rounded-lg hover:bg-[#8B1538] hover:text-white transition-all shadow-sm w-fit"
+                                                        >
+                                                            <i className="fas fa-external-link-alt"></i> View Credential
+                                                        </a>
+                                                        {isCredly(cert.credential_url) && (
+                                                            <div className="mt-2 border rounded-xl overflow-hidden shadow-sm max-w-[340px] bg-white">
+                                                                <iframe
+                                                                    src={`${cert.credential_url.replace('/public_url', '')}/embed`}
+                                                                    width="340"
+                                                                    height="270"
+                                                                    frameBorder="0"
+                                                                    allowTransparency={true}
+                                                                ></iframe>
+                                                            </div>
+                                                        )}
+                                                    </div>
                                                 )}
                                             </div>
                                         </div>
@@ -373,7 +415,7 @@ export default function ProfilePage() {
                 </div>
             </div>
 
-            {}
+            { }
             {activeModal === "basic" && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
                     <div className="bg-white rounded-3xl w-full max-w-2xl overflow-hidden shadow-2xl">
@@ -386,6 +428,20 @@ export default function ProfilePage() {
                             </button>
                         </div>
                         <div className="p-8 space-y-6">
+                            <div className="flex flex-col items-center gap-4 py-4 border-b border-[#E5E7EB]">
+                                <div className="w-[100px] h-[100px] rounded-full overflow-hidden border-4 border-[#8B1538]/20 shadow-inner">
+                                    <img
+                                        src={getImagePath()}
+                                        className="w-full h-full object-cover"
+                                        alt="Current Profile"
+                                    />
+                                </div>
+                                <label className="cursor-pointer bg-[#8B1538]/5 text-[#8B1538] px-4 py-2 rounded-xl text-xs font-bold hover:bg-[#8B1538]/10 transition-all border border-[#8B1538]/20">
+                                    <i className="fas fa-camera mr-2"></i> Change Profile Picture
+                                    <input type="file" className="hidden" accept="image/*" onChange={handleImageUpload} />
+                                </label>
+                            </div>
+
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
                                     <label className="block text-xs font-bold text-[#1F2937] mb-2">First Name</label>
@@ -579,7 +635,7 @@ export default function ProfilePage() {
 
             {activeModal === "skills" && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-                    {}
+                    { }
                 </div>
             )}
 
@@ -683,7 +739,7 @@ export default function ProfilePage() {
                 </div>
             )}
 
-            {}
+            { }
             {showSuccessNotification && (
                 <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 pointer-events-none">
                     <div className="bg-white rounded-2xl shadow-2xl border-2 border-emerald-500 overflow-hidden animate-in zoom-in-95 duration-300 pointer-events-auto max-w-md w-full">
@@ -710,7 +766,7 @@ export default function ProfilePage() {
                                 Your changes have been saved and are now visible on your profile.
                             </p>
                         </div>
-                        {}
+                        { }
                         <div className="h-1 bg-emerald-100">
                             <div className="h-full bg-emerald-500 animate-[shrink_3s_linear]" style={{ width: '100%' }}></div>
                         </div>

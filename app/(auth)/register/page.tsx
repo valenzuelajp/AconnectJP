@@ -6,23 +6,40 @@ import Image from "next/image";
 import Link from "next/link";
 import { registerAction } from "@/lib/actions";
 import { SubmitButton } from "@/components/SubmitButton";
+import EmailVerificationModal from "@/components/EmailVerificationModal";
 
 export default function RegisterPage() {
     const router = useRouter();
     const [state, action] = useActionState(registerAction, null);
     const [selectedDegree, setSelectedDegree] = useState("");
+    const [showVerifyModal, setShowVerifyModal] = useState(false);
+    const [registeredEmail, setRegisteredEmail] = useState("");
 
     useEffect(() => {
-        if (state?.success) {
-            setTimeout(() => router.push("/login"), 3000);
+        const s = state as any;
+        if (s?.success && s?.email) {
+            setRegisteredEmail(s.email);
+            setShowVerifyModal(true);
         }
-    }, [state, router]);
+    }, [state]);
+
+    const handleVerified = () => {
+        setShowVerifyModal(false);
+        router.push("/login?verified=true");
+    };
 
     const currentYear = new Date().getFullYear();
     const years = Array.from({ length: 16 }, (_, i) => (currentYear + 5 - i).toString());
 
     return (
         <div className="flex min-h-screen bg-[#f7f7f7]">
+            {/* Modal */}
+            <EmailVerificationModal
+                isOpen={showVerifyModal}
+                email={registeredEmail}
+                onClose={() => setShowVerifyModal(false)}
+                onVerified={handleVerified}
+            />
             <div className="hidden md:flex flex-[0_0_50%] items-center justify-center overflow-hidden bg-[#920E0E]">
                 <img
                     src="/assets/images/circles.png"
@@ -237,6 +254,7 @@ export default function RegisterPage() {
                             <div>
                                 <label className="text-sm font-semibold mb-1 block">Profile Picture (Optional)</label>
                                 <input
+                                    name="profile_image"
                                     type="file"
                                     accept="image/*"
                                     className="w-full h-[40px] px-[15px] border border-[#ddd] rounded outline-none focus:border-[#700A0A] focus:ring-1 focus:ring-[#700A0A]/20 py-1"

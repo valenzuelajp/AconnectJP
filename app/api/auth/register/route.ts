@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
             degree_other,
         } = body;
 
-        
+
         const [existingUserRows]: any = await db.query(
             "SELECT id FROM alumni WHERE email = ? OR student_number = ? LIMIT 1",
             [email, student_number]
@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
         }
 
         const hashedPassword = await bcrypt.hash(password, 10);
-        const token = crypto.randomBytes(32).toString("hex");
+        const token = Math.floor(100000 + Math.random() * 900000).toString(); // 6-digit code
         const finalDegree = degree === "Other" ? degree_other : degree;
 
         await db.query(
@@ -58,17 +58,25 @@ export async function POST(req: NextRequest) {
                 finalDegree,
                 gender,
                 "active",
-                true,
-                null,
-                0 
+                false, // email_verified
+                token, // verification_token
+                0
             ]
         );
 
-        
-        
+        try {
+            await sendVerificationEmail(email, token);
+        } catch (emailError) {
+            console.error("Failed to send verification email:", emailError);
+            // We still proceed, but the user might need to resend later
+        }
 
         return NextResponse.json(
-            { message: "Registration successful! You may now log in." },
+            {
+                message: "Registration successful! Please verify your email.",
+                requiresVerification: true,
+                email: email
+            },
             { status: 201 }
         );
     } catch (error: any) {
