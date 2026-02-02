@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 const MAX_ATTEMPTS = 3;
 
 export async function GET(request: Request) {
-    
+
     const authHeader = request.headers.get("authorization");
     if (process.env.CRON_SECRET && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
         return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
@@ -26,7 +26,7 @@ export async function GET(request: Request) {
             return NextResponse.json({ message: "No pending emails" });
         }
 
-        const results = [];
+        const results: any[] = [];
 
         for (const email of emails) {
             try {
@@ -51,8 +51,8 @@ export async function GET(request: Request) {
                 if (updatedAttempts >= MAX_ATTEMPTS) {
                     updateSql += ", status = 'failed'";
                 } else {
-                    const delay = Math.pow(2, updatedAttempts); 
-                    
+                    const delay = Math.pow(2, updatedAttempts);
+
                     updateSql += ", send_after = DATE_ADD(NOW(), INTERVAL ? MINUTE)";
                     params.push(delay);
                 }

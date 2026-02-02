@@ -1,6 +1,0 @@
-{
-  "version": 3,
-  "sources": [],
-  "sections": [
-    {"offset": {"line": 94, "column": 0}, "map": {"version":3,"sources":["file:///D:/AconnectJP/proxy.ts"],"sourcesContent":["import { withAuth } from \"next-auth/middleware\";\r\nimport { NextResponse } from \"next/server\";\r\n\r\nexport default withAuth(\r\n    function middleware(req) {\r\n        \r\n        return NextResponse.next();\r\n    },\r\n    {\r\n        callbacks: {\r\n            authorized: ({ token }) => !!token,\r\n        },\r\n        pages: {\r\n            signIn: \"/login\",\r\n        },\r\n    }\r\n);\r\n\r\nexport const config = {\r\n    matcher: [\r\n        \r\n        \"/((?!api/auth|_next/static|_next/image|favicon.ico|assets|login|register|admin/login).*)\",\r\n    ],\r\n};\r\n"],"names":["middleware","req","next","callbacks","authorized","token","pages","signIn","config","matcher"],"mappings":";;;;;;AAAA;AACA;;;uCAEe,IAAA,sJAAQ,EACnB,SAASA,WAAWC,GAAG;IAEnB,OAAO,8IAAY,CAACC,IAAI;AAC5B,GACA;IACIC,WAAW;QACPC,YAAY,CAAC,EAAEC,KAAK,EAAE,GAAK,CAAC,CAACA;IACjC;IACAC,OAAO;QACHC,QAAQ;IACZ;AACJ;AAGG,MAAMC,SAAS;IAClBC,SAAS;QAEL;KACH;AACL"}}]
-}

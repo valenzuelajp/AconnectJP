@@ -1,6 +1,0 @@
-{
-  "version": 3,
-  "sources": [],
-  "sections": [
-    {"offset": {"line": 4, "column": 0}, "map": {"version":3,"sources":["file:///D:/AconnectJP/components/Providers.tsx"],"sourcesContent":["\"use client\";\r\n\r\nimport { SessionProvider } from \"next-auth/react\";\r\n\r\nexport function Providers({ children }: { children: React.ReactNode }) {\r\n    return <SessionProvider>{children}</SessionProvider>;\r\n}\r\n"],"names":["Providers","children"],"mappings":";;;;;AAEA;AAFA;;;AAIO,SAASA,UAAU,EAAEC,QAAQ,EAAiC;IACjE,qBAAO,6LAAC,oKAAe;kBAAEA;;;;;;AAC7B;KAFgBD"}}]
-}

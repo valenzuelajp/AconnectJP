@@ -22,7 +22,7 @@ export async function GET() {
             [currentAlumniId]
         );
 
-        
+
         const [requests]: any = await db.query(
             "SELECT * FROM connection_requests WHERE sender_id = ? OR receiver_id = ?",
             [currentAlumniId, currentAlumniId]
@@ -33,11 +33,11 @@ export async function GET() {
             [currentAlumniId, currentAlumniId]
         );
 
-        
+
         const formattedAlumni = alumniList.map((alumnus) => {
             let connectionStatus = "connectable";
-            let requestId = null;
-            let senderId = null;
+            let requestId: any = null;
+            let senderId: any = null;
 
             const request = requests.find(
                 (r: any) =>

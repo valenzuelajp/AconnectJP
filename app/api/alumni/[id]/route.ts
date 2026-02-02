@@ -5,7 +5,7 @@ import db from "@/lib/db";
 
 export async function GET(
     request: Request,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     const session = await getServerSession(authOptions);
     if (!session || !session.user) {
@@ -40,7 +40,7 @@ export async function GET(
         alumnus.employment = employmentRows;
         alumnus.certifications = certificationRows;
 
-        
+
         const [sentRequestRows]: any = await db.query(
             "SELECT id FROM connection_requests WHERE sender_id = ? AND receiver_id = ? LIMIT 1",
             [currentUserId, parseInt(id)]
@@ -63,7 +63,7 @@ export async function GET(
         const connection = connectionRows[0];
 
         let connectionStatus = "connectable";
-        let requestId = null;
+        let requestId: any = null;
 
         if (connection) {
             connectionStatus = "accepted";

@@ -39,7 +39,7 @@ export async function POST(request: Request) {
         const recipient_batch = formData.get("recipient_batch") as string;
         const file = formData.get("file") as File | null;
 
-        let imageName = null;
+        let imageName: string | null = null;
 
         if (file) {
             const buffer = Buffer.from(await file.arrayBuffer());
