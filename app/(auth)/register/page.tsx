@@ -12,34 +12,20 @@ export default function RegisterPage() {
     const router = useRouter();
     const [state, action] = useActionState(registerAction, null);
     const [selectedDegree, setSelectedDegree] = useState("");
-    const [showVerifyModal, setShowVerifyModal] = useState(false);
-    const [registeredEmail, setRegisteredEmail] = useState("");
 
     useEffect(() => {
         const s = state as any;
-        if (s?.success && s?.email) {
-            setRegisteredEmail(s.email);
-            setShowVerifyModal(true);
+        if (s?.success) {
+            // Redirect directly to login on success
+            router.push("/login?verified=true");
         }
-    }, [state]);
-
-    const handleVerified = () => {
-        setShowVerifyModal(false);
-        router.push("/login?verified=true");
-    };
+    }, [state, router]);
 
     const currentYear = new Date().getFullYear();
     const years = Array.from({ length: 16 }, (_, i) => (currentYear + 5 - i).toString());
 
     return (
         <div className="flex min-h-screen bg-[#f7f7f7]">
-            {/* Modal */}
-            <EmailVerificationModal
-                isOpen={showVerifyModal}
-                email={registeredEmail}
-                onClose={() => setShowVerifyModal(false)}
-                onVerified={handleVerified}
-            />
             <div className="hidden md:flex flex-[0_0_50%] items-center justify-center overflow-hidden bg-[#920E0E]">
                 <img
                     src="/assets/images/circles.png"

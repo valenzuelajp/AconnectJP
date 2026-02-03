@@ -19,7 +19,7 @@ export async function POST(req: Request) {
         }
 
         await db.query(
-            "UPDATE alumni SET email_verified = true, verification_token = null WHERE email = ?",
+            "UPDATE alumni SET email_verified = true, verification_token = null, status = 'active' WHERE email = ?",
             [email]
         );
 

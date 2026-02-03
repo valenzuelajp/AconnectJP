@@ -19,18 +19,50 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const body = await request.json();
-  const { event_name, event_date, event_time_duration, location, contact_person, description } = body;
-
   try {
+    const formData = await request.formData();
+    const event_name = formData.get("event_name") as string;
+    const event_date = formData.get("event_date") as string;
+    const event_time_duration = formData.get("event_time_duration") as string;
+    const location = formData.get("location") as string;
+    const contact_person = formData.get("contact_person") as string;
+    const description = formData.get("description") as string;
+    const event_image = formData.get("event_image") as File;
+
+    console.log("Creating event:", { event_name, event_date, location });
+
+    let eventImageName: string | null = null;
+
+    if (event_image && event_image.size > 0) {
+      console.log("Processing event image:", event_image.name);
+      const buffer = Buffer.from(await event_image.arrayBuffer());
+      eventImageName = `${Date.now()}_${event_image.name.replace(/\s+/g, "_")}`;
+
+      const { writeFile, mkdir } = await import("fs/promises");
+      const path = await import("path");
+
+      const uploadDir = path.join(process.cwd(), "public", "assets", "uploads", "events");
+      try {
+        await mkdir(uploadDir, { recursive: true });
+      } catch (e) {
+        console.log("Upload directory already exists or created");
+      }
+
+      await writeFile(path.join(uploadDir, eventImageName), buffer);
+      console.log("Image saved:", eventImageName);
+    }
+
+    console.log("Inserting into database...");
     const [result]: any = await db.query(
-      "INSERT INTO events (event_name, event_date, event_time_duration, location, contact_person, description) VALUES (?, ?, ?, ?, ?, ?)",
-      [event_name, new Date(event_date), event_time_duration, location, contact_person, description]
+      "INSERT INTO events (event_name, event_date, event_time_duration, location, contact_person, description, event_image) VALUES (?, ?, ?, ?, ?, ?, ?)",
+      [event_name, new Date(event_date), event_time_duration, location, contact_person, description, eventImageName]
     );
 
-    return NextResponse.json({ id: result.insertId, ...body });
+    console.log("Event created successfully with ID:", result.insertId);
+    return NextResponse.json({ id: result.insertId, event_name, event_date, event_time_duration, location, contact_person, description, event_image: eventImageName });
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error("Error creating event:", error);
+    return NextResponse.json({ error: error.message || "Failed to create event" }, { status: 500 });
   }
 }
 

@@ -10,6 +10,8 @@ export default function ProfilePage() {
     const [loading, setLoading] = useState(true);
     const [activeModal, setActiveModal] = useState<string | null>(null);
     const [formData, setFormData] = useState<any>({});
+    const [certTab, setCertTab] = useState<'credly' | 'manual'>('credly');
+    const [certificationImage, setCertificationImage] = useState<File | null>(null);
     const [showSuccessNotification, setShowSuccessNotification] = useState(false);
 
     useEffect(() => {
@@ -47,14 +49,64 @@ export default function ProfilePage() {
     const handleCertificationSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
+            const data = new FormData();
+
+            // If editing, append ID
+            if (formData.id) {
+                data.append('id', formData.id);
+            }
+
+            if (certTab === 'credly') {
+                // Parse Credly Embed Code if provided
+                let processedUrl = formData.credential_url;
+                // Basic cleanup of whitespace
+                if (processedUrl) processedUrl = processedUrl.trim();
+
+                if (processedUrl && processedUrl.includes('data-share-badge-id')) {
+                    const match = processedUrl.match(/data-share-badge-id="([^"]+)"/);
+                    if (match && match[1]) {
+                        processedUrl = `https://www.credly.com/badges/${match[1]}/public_url`;
+                    }
+                } else if (processedUrl && processedUrl.includes('<iframe')) {
+                    const match = processedUrl.match(/src="([^"]+)"/);
+                    if (match && match[1]) {
+                        if (match[1].includes('embedded_badge')) {
+                            const id = match[1].split('embedded_badge/')[1];
+                            processedUrl = `https://www.credly.com/badges/${id}/public_url`;
+                        } else {
+                            processedUrl = match[1];
+                        }
+                    }
+                }
+
+                data.append('name', formData.name);
+                data.append('issuing_org', formData.issuing_org);
+                data.append('credential_url', processedUrl);
+                data.append('credential_id', formData.credential_id || '');
+                if (formData.issue_date) data.append('issue_date', formData.issue_date);
+                if (formData.expiration_date) data.append('expiration_date', formData.expiration_date);
+            } else {
+                // Manual fields
+                data.append('name', formData.name);
+                data.append('issuing_org', 'Manual Entry');
+                data.append('issue_date', formData.issue_date);
+                data.append('expiration_date', formData.expiration_date || '');
+                if (certificationImage) {
+                    data.append('certification_image', certificationImage);
+                }
+            }
+
+            const method = formData.id ? "PUT" : "POST";
+
             const res = await fetch("/api/profile/certifications", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(formData),
+                method: method,
+                body: data,
             });
+
             if (res.ok) {
                 fetchProfile();
                 setActiveModal(null);
+                setCertificationImage(null);
                 setShowSuccessNotification(true);
                 setTimeout(() => setShowSuccessNotification(false), 3000);
             }
@@ -77,6 +129,27 @@ export default function ProfilePage() {
         } catch (error) {
             console.error("Failed to delete certification:", error);
         }
+    };
+
+    const handleEditCertification = (cert: any) => {
+        setFormData({
+            id: cert.id,
+            name: cert.name,
+            issuing_org: cert.issuing_org,
+            issue_date: cert.issue_date ? new Date(cert.issue_date).toISOString().split('T')[0] : "",
+            expiration_date: cert.expiration_date ? new Date(cert.expiration_date).toISOString().split('T')[0] : "",
+            credential_id: cert.credential_id || "",
+            credential_url: cert.credential_url || "",
+        });
+
+        // Determine tab based on URL or org
+        if (cert.credential_url && cert.credential_url.includes('credly.com')) {
+            setCertTab('credly');
+        } else {
+            setCertTab('manual');
+        }
+
+        setActiveModal('certification');
     };
 
     const handleUpdate = async (type: string, payload: any) => {
@@ -124,7 +197,6 @@ export default function ProfilePage() {
             });
             const data = await res.json();
             if (data.success) {
-                // Update session if needed (though next-auth handles it with JWT update)
                 fetchProfile();
             }
         } catch (error) {
@@ -342,6 +414,7 @@ export default function ProfilePage() {
                                         credential_id: "",
                                         credential_url: "",
                                     });
+                                    setCertificationImage(null);
                                     setActiveModal("certification");
                                 }}
                                 className="text-[#8B1538] border-2 border-[#8B1538] px-4 py-1.5 rounded-lg text-xs font-bold hover:bg-[#8B1538] hover:text-white transition-all"
@@ -354,11 +427,11 @@ export default function ProfilePage() {
                             {certifications.length > 0 ? (
                                 certifications.map((cert) => (
                                     <div key={cert.id} className="flex justify-between items-start p-4 bg-slate-50 rounded-xl border border-slate-100 hover:border-[#D4A574] transition-all group/cert">
-                                        <div className="flex gap-4">
-                                            <div className="w-12 h-12 bg-[#8B1538]/10 text-[#8B1538] rounded-xl flex items-center justify-center text-xl shadow-sm">
+                                        <div className="flex gap-4 w-full">
+                                            <div className="w-12 h-12 bg-[#8B1538]/10 text-[#8B1538] rounded-xl flex items-center justify-center text-xl shadow-sm flex-shrink-0">
                                                 <i className="fas fa-award"></i>
                                             </div>
-                                            <div>
+                                            <div className="flex-grow">
                                                 <h4 className="font-bold text-[#1F2937]">{cert.name}</h4>
                                                 <p className="text-sm text-[#6B7280] font-medium">{cert.issuing_org}</p>
                                                 <div className="flex gap-4 mt-2 text-[10px] font-black text-[#9CA3AF] uppercase tracking-widest">
@@ -383,8 +456,7 @@ export default function ProfilePage() {
                                                                     src={`${cert.credential_url.replace('/public_url', '')}/embed`}
                                                                     width="340"
                                                                     height="270"
-                                                                    frameBorder="0"
-                                                                    allowTransparency={true}
+                                                                    className="border-0"
                                                                 ></iframe>
                                                             </div>
                                                         )}
@@ -392,13 +464,22 @@ export default function ProfilePage() {
                                                 )}
                                             </div>
                                         </div>
-                                        <button
-                                            onClick={() => handleDeleteCertification(cert.id)}
-                                            className="text-slate-300 hover:text-rose-600 p-2 opacity-0 group-hover/cert:opacity-100 transition-all transform hover:scale-110"
-                                            title="Delete Certification"
-                                        >
-                                            <i className="fas fa-trash-alt"></i>
-                                        </button>
+                                        <div className="flex items-start gap-2 opacity-0 group-hover/cert:opacity-100 transition-opacity">
+                                            <button
+                                                onClick={() => handleEditCertification(cert)}
+                                                className="text-slate-400 hover:text-blue-600 p-2 transition-transform hover:scale-110"
+                                                title="Edit Certification"
+                                            >
+                                                <i className="fas fa-edit"></i>
+                                            </button>
+                                            <button
+                                                onClick={() => handleDeleteCertification(cert.id)}
+                                                className="text-slate-400 hover:text-rose-600 p-2 transition-transform hover:scale-110"
+                                                title="Delete Certification"
+                                            >
+                                                <i className="fas fa-trash-alt"></i>
+                                            </button>
+                                        </div>
                                     </div>
                                 ))
                             ) : (
@@ -461,6 +542,16 @@ export default function ProfilePage() {
                                         className="w-full border border-[#E5E7EB] rounded-xl px-4 py-2.5 text-sm"
                                     />
                                 </div>
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold text-[#1F2937] mb-2">Middle Name (Optional)</label>
+                                <input
+                                    type="text"
+                                    value={formData.middle_name || ""}
+                                    onChange={(e) => setFormData({ ...formData, middle_name: e.target.value })}
+                                    className="w-full border border-[#E5E7EB] rounded-xl px-4 py-2.5 text-sm"
+                                    placeholder="Leave blank if not applicable"
+                                />
                             </div>
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
@@ -645,80 +736,132 @@ export default function ProfilePage() {
                         <div className="bg-gradient-to-br from-[#8B1538] to-[#6B0F2A] text-white p-8 relative overflow-hidden">
                             <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 -mr-16 -mt-16 rounded-full"></div>
                             <h5 className="text-2xl font-black flex items-center gap-4 relative z-10">
-                                <i className="fas fa-award text-amber-400"></i> New Certification
+                                <i className="fas fa-award text-amber-400"></i> {formData.id ? 'Edit Certification' : 'New Certification'}
                             </h5>
                             <p className="text-rose-100 text-sm opacity-80 mt-1">Add your professional licenses and credentials</p>
                             <button onClick={() => setActiveModal(null)} className="absolute right-6 top-8 text-white/60 hover:text-white transition-colors">
                                 <i className="fas fa-times text-xl"></i>
                             </button>
                         </div>
+                        <div className="flex border-b border-gray-100">
+                            <button
+                                onClick={() => setCertTab('credly')}
+                                className={`flex-1 py-4 text-sm font-bold uppercase tracking-widest transition-all ${certTab === 'credly' ? 'text-[#8B1538] border-b-2 border-[#8B1538] bg-rose-50/30' : 'text-gray-400 hover:text-gray-600'}`}
+                            >
+                                <i className="fas fa-link mr-2"></i> Credly Badge
+                            </button>
+                            <button
+                                onClick={() => setCertTab('manual')}
+                                className={`flex-1 py-4 text-sm font-bold uppercase tracking-widest transition-all ${certTab === 'manual' ? 'text-[#8B1538] border-b-2 border-[#8B1538] bg-rose-50/30' : 'text-gray-400 hover:text-gray-600'}`}
+                            >
+                                <i className="fas fa-file-upload mr-2"></i> Manual Entry
+                            </button>
+                        </div>
                         <form onSubmit={handleCertificationSubmit} className="p-8 space-y-5 bg-white">
-                            <div className="space-y-4">
-                                <div>
-                                    <label className="text-[10px] font-black text-[#4B5563] uppercase tracking-[0.2em] ml-1 mb-2 block">Certification Name</label>
-                                    <input
-                                        required
-                                        type="text"
-                                        placeholder="e.g. AWS Certified Developer"
-                                        value={formData.name || ""}
-                                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                        className="w-full border-2 border-slate-100 focus:border-[#8B1538] rounded-2xl px-5 py-3.5 text-sm font-bold transition-all outline-none bg-slate-50/30"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="text-[10px] font-black text-[#4B5563] uppercase tracking-[0.2em] ml-1 mb-2 block">Issuing Organization</label>
-                                    <input
-                                        required
-                                        type="text"
-                                        placeholder="e.g. Amazon Web Services"
-                                        value={formData.issuing_org || ""}
-                                        onChange={(e) => setFormData({ ...formData, issuing_org: e.target.value })}
-                                        className="w-full border-2 border-slate-100 focus:border-[#8B1538] rounded-2xl px-5 py-3.5 text-sm font-bold transition-all outline-none bg-slate-50/30"
-                                    />
-                                </div>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <label className="text-[10px] font-black text-[#4B5563] uppercase tracking-[0.2em] ml-1 mb-2 block">Issue Date</label>
-                                        <input
-                                            type="date"
-                                            value={formData.issue_date || ""}
-                                            onChange={(e) => setFormData({ ...formData, issue_date: e.target.value })}
-                                            className="w-full border-2 border-slate-100 focus:border-[#8B1538] rounded-2xl px-5 py-3.5 text-sm font-bold transition-all outline-none bg-slate-50/30"
-                                        />
+                            {certTab === 'credly' ? (
+                                <div className="space-y-4">
+                                    <div className="bg-amber-50 border border-amber-100 p-4 rounded-xl flex items-start gap-3">
+                                        <i className="fas fa-info-circle text-amber-500 mt-0.5"></i>
+                                        <div>
+                                            <h6 className="font-bold text-amber-800 text-sm">Import from Credly</h6>
+                                            <p className="text-xs text-amber-600 mt-1">Paste your Credly Embed Code (or Public Link) to verify automatically.</p>
+                                        </div>
                                     </div>
                                     <div>
-                                        <label className="text-[10px] font-black text-[#4B5563] uppercase tracking-[0.2em] ml-1 mb-2 block">Expiration Date</label>
+                                        <label className="text-[10px] font-black text-[#4B5563] uppercase tracking-[0.2em] ml-1 mb-2 block">Embed Code / Badge URL</label>
                                         <input
-                                            type="date"
-                                            value={formData.expiration_date || ""}
-                                            onChange={(e) => setFormData({ ...formData, expiration_date: e.target.value })}
-                                            className="w-full border-2 border-slate-100 focus:border-[#8B1538] rounded-2xl px-5 py-3.5 text-sm font-bold transition-all outline-none bg-slate-50/30"
-                                        />
-                                    </div>
-                                </div>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <label className="text-[10px] font-black text-[#4B5563] uppercase tracking-[0.2em] ml-1 mb-2 block">Credential ID</label>
-                                        <input
+                                            required
                                             type="text"
-                                            placeholder="Optional"
-                                            value={formData.credential_id || ""}
-                                            onChange={(e) => setFormData({ ...formData, credential_id: e.target.value })}
-                                            className="w-full border-2 border-slate-100 focus:border-[#8B1538] rounded-2xl px-5 py-3.5 text-sm font-bold transition-all outline-none bg-slate-50/30"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="text-[10px] font-black text-[#4B5563] uppercase tracking-[0.2em] ml-1 mb-2 block">Credential URL</label>
-                                        <input
-                                            type="url"
-                                            placeholder="https://..."
+                                            placeholder='<div data-share-badge-id="..."></div> or URL'
                                             value={formData.credential_url || ""}
                                             onChange={(e) => setFormData({ ...formData, credential_url: e.target.value })}
+                                            className="w-full border-2 border-slate-100 focus:border-[#8B1538] rounded-2xl px-5 py-3.5 text-sm font-bold transition-all outline-none bg-slate-50/30 font-mono"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="text-[10px] font-black text-[#4B5563] uppercase tracking-[0.2em] ml-1 mb-2 block">Certification Name</label>
+                                        <input
+                                            required
+                                            type="text"
+                                            placeholder="e.g. AWS Certified Cloud Practitioner"
+                                            value={formData.name || ""}
+                                            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                            className="w-full border-2 border-slate-100 focus:border-[#8B1538] rounded-2xl px-5 py-3.5 text-sm font-bold transition-all outline-none bg-slate-50/30"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="text-[10px] font-black text-[#4B5563] uppercase tracking-[0.2em] ml-1 mb-2 block">Issuing Organization</label>
+                                        <input
+                                            required
+                                            type="text"
+                                            placeholder="e.g. Amazon Web Services"
+                                            value={formData.issuing_org || ""}
+                                            onChange={(e) => setFormData({ ...formData, issuing_org: e.target.value })}
                                             className="w-full border-2 border-slate-100 focus:border-[#8B1538] rounded-2xl px-5 py-3.5 text-sm font-bold transition-all outline-none bg-slate-50/30"
                                         />
                                     </div>
                                 </div>
-                            </div>
+                            ) : (
+                                <div className="space-y-4">
+                                    <div>
+                                        <label className="text-[10px] font-black text-[#4B5563] uppercase tracking-[0.2em] ml-1 mb-2 block">Certification Name</label>
+                                        <input
+                                            required
+                                            type="text"
+                                            placeholder="e.g. Project Management Professional"
+                                            value={formData.name || ""}
+                                            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                            className="w-full border-2 border-slate-100 focus:border-[#8B1538] rounded-2xl px-5 py-3.5 text-sm font-bold transition-all outline-none bg-slate-50/30"
+                                        />
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="text-[10px] font-black text-[#4B5563] uppercase tracking-[0.2em] ml-1 mb-2 block">Issue Date</label>
+                                            <input
+                                                required
+                                                type="date"
+                                                value={formData.issue_date || ""}
+                                                onChange={(e) => setFormData({ ...formData, issue_date: e.target.value })}
+                                                className="w-full border-2 border-slate-100 focus:border-[#8B1538] rounded-2xl px-5 py-3.5 text-sm font-bold transition-all outline-none bg-slate-50/30"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="text-[10px] font-black text-[#4B5563] uppercase tracking-[0.2em] ml-1 mb-2 block">Expiration Date</label>
+                                            <input
+                                                type="date"
+                                                value={formData.expiration_date || ""}
+                                                onChange={(e) => setFormData({ ...formData, expiration_date: e.target.value })}
+                                                className="w-full border-2 border-slate-100 focus:border-[#8B1538] rounded-2xl px-5 py-3.5 text-sm font-bold transition-all outline-none bg-slate-50/30"
+                                            />
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label className="text-[10px] font-black text-[#4B5563] uppercase tracking-[0.2em] ml-1 mb-2 block">
+                                            Upload Certificate Image <span className="text-gray-400 font-normal normal-case ml-1">(Optional)</span>
+                                        </label>
+                                        <div className="border-2 border-dashed border-slate-200 rounded-2xl p-6 text-center hover:bg-slate-50 transition-colors relative">
+                                            <input
+                                                type="file"
+                                                accept="image/*"
+                                                onChange={(e) => setCertificationImage(e.target.files?.[0] || null)}
+                                                className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                                            />
+                                            {certificationImage ? (
+                                                <div className="text-[#8B1538] font-bold flex items-center justify-center gap-2">
+                                                    <i className="fas fa-check-circle"></i> {certificationImage.name}
+                                                </div>
+                                            ) : (
+                                                <div className="text-gray-400">
+                                                    <i className="fas fa-cloud-upload-alt text-2xl mb-2"></i>
+                                                    <p className="text-xs font-bold uppercase tracking-widest">Click to Upload</p>
+                                                    <p className="text-[10px] mt-1">JPG, PNG up to 5MB</p>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
                             <div className="flex gap-4 pt-4">
                                 <button
                                     type="button"
@@ -731,7 +874,7 @@ export default function ProfilePage() {
                                     type="submit"
                                     className="flex-[2] bg-gradient-to-r from-[#8B1538] to-[#6B0F2A] text-white px-8 py-4 rounded-2xl font-black text-sm uppercase tracking-widest shadow-lg shadow-rose-200 hover:-translate-y-0.5 transition-all"
                                 >
-                                    Add Certification
+                                    {formData.id ? 'Save Changes' : 'Add Certification'}
                                 </button>
                             </div>
                         </form>

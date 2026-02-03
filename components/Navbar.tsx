@@ -143,16 +143,6 @@ const Navbar = () => {
                                         href="/profile"
                                         className="flex items-center gap-[12px] px-[11px] h-full text-[#666] hover:text-primary transition-all duration-200"
                                     >
-                                        <div className="w-[32px] h-[32px] rounded-full overflow-hidden border border-black/10 flex-shrink-0">
-                                            <img
-                                                src={(session?.user as any)?.profile_image ? `/assets/uploads/alumni/${(session?.user as any).profile_image}` : "/assets/images/person-male.png"}
-                                                alt="Profile"
-                                                className="w-full h-full object-cover"
-                                                onError={(e) => {
-                                                    (e.target as HTMLImageElement).src = "https://ui-avatars.com/api/?name=" + (session?.user?.name || "Admin") + "&background=8B1538&color=fff";
-                                                }}
-                                            />
-                                        </div>
                                         <div className="flex flex-col items-start justify-center">
                                             <span className="text-[11px] font-bold text-[#8B1538] leading-none mb-[3px] uppercase tracking-[0.5px]">
                                                 ADMIN
@@ -263,16 +253,6 @@ const Navbar = () => {
                                             href="/profile"
                                             className="flex items-center gap-[12px] px-[11px] h-full text-[#666] hover:text-primary transition-all duration-200"
                                         >
-                                            <div className="w-[32px] h-[32px] rounded-full overflow-hidden border border-black/10 flex-shrink-0">
-                                                <img
-                                                    src={(session?.user as any)?.profile_image ? `/assets/uploads/alumni/${(session.user as any).profile_image}` : "/assets/images/person-male.png"}
-                                                    alt="Profile"
-                                                    className="w-full h-full object-cover"
-                                                    onError={(e) => {
-                                                        (e.target as HTMLImageElement).src = "https://ui-avatars.com/api/?name=" + (session?.user?.name || "User") + "&background=8B1538&color=fff";
-                                                    }}
-                                                />
-                                            </div>
                                             <div className="flex flex-col items-start justify-center">
                                                 <span className="text-[11px] font-bold text-primary leading-none mb-[3px] uppercase tracking-[0.5px]">
                                                     {(session?.user as any)?.student_number || "ALUMNI"}

@@ -67,12 +67,12 @@ export async function registerAction(prevState: any, formData: FormData) {
             `INSERT INTO alumni (
                 student_number, password, first_name, last_name, email, 
                 alternative_email, phone, telephone, graduation_year, 
-                degree, gender, year_admitted, status
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                degree, gender, year_admitted, status, email_verified
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
                 student_number, hashedPassword, first_name, last_name, email,
                 alternative_email, phone, telephone || null, parseInt(graduation_year),
-                finalDegree, gender.toLowerCase(), yearAdmitted, "inactive"
+                finalDegree, gender.toLowerCase(), yearAdmitted, "active", true
             ]
         );
 

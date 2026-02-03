@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import ConfirmModal from "@/components/ConfirmModal";
+import SuccessModal from "@/components/SuccessModal";
 
 export default function AdminEvents() {
   const [events, setEvents] = useState<any[]>([]);
@@ -15,6 +17,9 @@ export default function AdminEvents() {
     contact_person: "",
     description: ""
   });
+  const [eventImage, setEventImage] = useState<File | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<{ show: boolean, id: number | null }>({ show: false, id: null });
+  const [showSuccess, setShowSuccess] = useState<{ show: boolean, message: string }>({ show: false, message: "" });
 
   useEffect(() => {
     fetchEvents();
@@ -36,26 +41,52 @@ export default function AdminEvents() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     try {
+      const data = new FormData();
+      data.append("event_name", formData.event_name);
+      data.append("event_date", formData.event_date);
+      data.append("event_time_duration", formData.event_time_duration);
+      data.append("location", formData.location);
+      data.append("contact_person", formData.contact_person);
+      data.append("description", formData.description);
+      if (eventImage) {
+        data.append("event_image", eventImage);
+      }
+
       const res = await fetch("/api/admin/events", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData)
+        body: data
       });
+
       if (res.ok) {
         setShowModal(false);
         fetchEvents();
         setFormData({ event_name: "", event_date: "", event_time_duration: "", location: "", contact_person: "", description: "" });
+        setEventImage(null);
+        setShowSuccess({ show: true, message: "Event created successfully!" });
+      } else {
+        const errorData = await res.json();
+        alert(`Error creating event: ${errorData.error || 'Unknown error'}`);
+        console.error("Server error:", errorData);
       }
     } catch (error) {
-      console.error(error);
+      console.error("Error submitting form:", error);
+      alert(`Failed to create event: ${error}`);
     }
   }
 
   async function handleDelete(id: number) {
-    if (!confirm("Are you sure you want to delete this event?")) return;
+    setConfirmDelete({ show: true, id });
+  }
+
+  async function confirmDeleteEvent() {
+    if (!confirmDelete.id) return;
     try {
-      const res = await fetch(`/api/admin/events?id=${id}`, { method: "DELETE" });
-      if (res.ok) fetchEvents();
+      const res = await fetch(`/api/admin/events?id=${confirmDelete.id}`, { method: "DELETE" });
+      if (res.ok) {
+        fetchEvents();
+        setConfirmDelete({ show: false, id: null });
+        setShowSuccess({ show: true, message: "Event deleted successfully!" });
+      }
     } catch (error) {
       console.error(error);
     }
@@ -147,7 +178,7 @@ export default function AdminEvents() {
         </div>
       </div>
 
-      {}
+      { }
       {showModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
@@ -216,6 +247,15 @@ export default function AdminEvents() {
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 ></textarea>
               </div>
+              <div className="md:col-span-2">
+                <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">Event Image (Optional)</label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => setEventImage(e.target.files?.[0] || null)}
+                  className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm focus:ring-1 focus:ring-[#700A0A]/20 focus:border-[#700A0A] outline-none"
+                />
+              </div>
               <div className="md:col-span-2 flex justify-end gap-3 mt-4">
                 <button
                   type="button"
@@ -235,6 +275,26 @@ export default function AdminEvents() {
           </div>
         </div>
       )}
+
+      {/* Confirmation Modal */}
+      <ConfirmModal
+        isOpen={confirmDelete.show}
+        title="Delete Event"
+        message="Are you sure you want to delete this event? This action cannot be undone."
+        confirmText="Delete"
+        cancelText="Cancel"
+        type="danger"
+        onConfirm={confirmDeleteEvent}
+        onCancel={() => setConfirmDelete({ show: false, id: null })}
+      />
+
+      {/* Success Modal */}
+      <SuccessModal
+        isOpen={showSuccess.show}
+        title="Success!"
+        message={showSuccess.message}
+        onClose={() => setShowSuccess({ show: false, message: "" })}
+      />
     </div>
   );
 }
